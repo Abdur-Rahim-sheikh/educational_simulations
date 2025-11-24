@@ -1,6 +1,17 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  compatibilityDate: '2025-07-15',
-  devtools: { enabled: true },
-  modules: ['@nuxt/content', '@nuxt/image']
-})
+	compatibilityDate: "2025-07-15",
+	devtools: { enabled: true },
+	future: {
+		compatibilityVersion: 4,
+	},
+	modules: ["@nuxt/content", "@nuxt/image"],
+	vite: {
+		optimizeDeps: {
+			include: ["matter-js", "p5"],
+		},
+	},
+	imports: {
+		dirs: ["composables/**"],
+	},
+});
