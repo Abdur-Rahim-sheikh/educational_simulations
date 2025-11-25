@@ -26,7 +26,7 @@ export const useFallingshapes = () => {
 			p.background(30);
 			Engine.update(engine);
 
-			if (p.mouseIsPressed && p.frameCount % 10 === 0) {
+			if (p.mouseIsPressed && p.frameCount % 5 === 0) {
 				const box = Bodies.rectangle(p.mouseX, p.mouseY, 40, 40);
 				boxes.push(box);
 				World.add(world, box);
