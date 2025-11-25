@@ -2,7 +2,7 @@ import type p5 from "p5";
 
 import Matter from "matter-js";
 
-export const useFallingshapes = () => {
+export const useFallingShapes = () => {
 	const sketch = (p: p5) => {
 		const Engine = Matter.Engine;
 		const World = Matter.World;
@@ -14,11 +14,13 @@ export const useFallingshapes = () => {
 		let ground: Matter.Body;
 
 		p.setup = () => {
-			p.createCanvas(800, 600);
+			p.createCanvas(p.windowWidth - 300, p.windowHeight);
 			engine = Engine.create();
 			world = engine.world;
 
-			ground = Bodies.rectangle(400, 590, 810, 30, { isStatic: true });
+			ground = Bodies.rectangle(p.width / 2, p.height - 20, p.width, 40, {
+				isStatic: true,
+			});
 			World.add(world, ground);
 		};
 
@@ -27,23 +29,36 @@ export const useFallingshapes = () => {
 			Engine.update(engine);
 
 			if (p.mouseIsPressed && p.frameCount % 5 === 0) {
-				const box = Bodies.rectangle(p.mouseX, p.mouseY, 40, 40);
+				const size = p.random(20, 50);
+				const box = Bodies.rectangle(p.mouseX, p.mouseY, size, size);
 				boxes.push(box);
 				World.add(world, box);
 			}
-			p.fill(127);
-			p.noStroke();
+			p.fill(100);
+
 			p.rectMode(p.CENTER);
 			p.rect(ground.position.x, ground.position.y, 810, 30);
-			p.fill(255, 0, 100);
+			p.fill(0, 200, 255);
 
 			for (let box of boxes) {
 				p.push();
 				p.translate(box.position.x, box.position.y);
 				p.rotate(box.angle);
-				p.rect(0, 0, 40, 40);
+				p.rect(
+					0,
+					0,
+					box.bounds.max.x - box.bounds.min.x,
+					box.bounds.max.y - box.bounds.min.y
+				);
 				p.pop();
 			}
+			p.fill(150);
+			p.textAlign(p.CENTER);
+			p.text("আয়ত বানাতে ক্লিক এন্ড ড্রাগ করুন", p.width / 2, 50);
+		};
+
+		p.windowResized = () => {
+			p.resizeCanvas(p.windowWidth - 300, p.windowHeight);
 		};
 	};
 	return { sketch };

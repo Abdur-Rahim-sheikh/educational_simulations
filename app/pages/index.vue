@@ -2,8 +2,8 @@
     setup
     lang="ts"
 >
-import { useFallingshapes } from '~/composables/simulations/useFallingShapes';
-const { sketch } = useFallingshapes();
+import { useFallingShapes } from '~/composables/simulations/useFallingShapes';
+const { sketch } = useFallingShapes();
 </script>
 
 <template>
