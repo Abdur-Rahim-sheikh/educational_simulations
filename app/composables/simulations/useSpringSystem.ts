@@ -86,8 +86,9 @@ export const useSpringSystem = () => {
 			// Instruction
 			p.fill(150);
 			p.noStroke();
-			p.textAlign(p.CENTER);
-			p.text("বলটি টেনে ছেড়ে দাও", p.width / 2, p.height - 50);
+			p.textAlign(p.LEFT);
+			p.textSize(30);
+			p.text("বলটি টেনে ছেড়ে দাও", 20, 50);
 		};
 
 		p.windowResized = () => {

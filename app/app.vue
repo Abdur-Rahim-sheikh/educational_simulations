@@ -54,7 +54,7 @@ const selectSimulation = (key: string) => {
         <!-- Main Content (Canvas) -->
         <main class="content">
             <ClientOnly>
-                <SketchCanvas :sketch="activeSketch" />
+                <SketchBaseCanvas :sketch="activeSketch" />
                 <template #fallback>
                     <div class="loading">Loading Physics Engine...</div>
                 </template>

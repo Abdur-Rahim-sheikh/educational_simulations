@@ -54,6 +54,7 @@ export const useFallingShapes = () => {
 			}
 			p.fill(150);
 			p.textAlign(p.CENTER);
+			p.textSize(30);
 			p.text("আয়ত বানাতে ক্লিক এন্ড ড্রাগ করুন", p.width / 2, 50);
 		};
 
