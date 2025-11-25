@@ -8,8 +8,8 @@ const { sketch } = useFallingshapes();
 
 <template>
     <div class="lab-container">
-        <h1>OSP Lab: Rigid Body Dynamics</h1>
-        <p>Click and hold to spawn bodies.</p>
+        <h1>পদার্থবিদ্যার সিমুল্যেশন</h1>
+        <p>বক্স বানাতে ক্লিক অ্যান্ড হোল্ড</p>
 
         <div class="viewport">
             <ClientOnly>
