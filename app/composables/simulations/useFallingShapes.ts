@@ -3,6 +3,10 @@ import type p5 from "p5";
 import Matter from "matter-js";
 
 export const useFallingShapes = () => {
+	const config = reactive({
+		gravityScale: 1,
+		timeScale: 1,
+	});
 	const sketch = (p: p5) => {
 		const Engine = Matter.Engine;
 		const World = Matter.World;
@@ -26,30 +30,32 @@ export const useFallingShapes = () => {
 
 		p.draw = () => {
 			p.background(30);
+			engine.gravity.scale = 0.001 * config.gravityScale;
+			engine.timing.timeScale = config.timeScale;
 			Engine.update(engine);
 
 			if (p.mouseIsPressed && p.frameCount % 5 === 0) {
 				const size = p.random(20, 50);
 				const box = Bodies.rectangle(p.mouseX, p.mouseY, size, size);
+
 				boxes.push(box);
 				World.add(world, box);
 			}
 			p.fill(100);
 
 			p.rectMode(p.CENTER);
-			p.rect(ground.position.x, ground.position.y, 810, 30);
+			p.rect(ground.position.x, ground.position.y, p.width, 30);
 			p.fill(0, 200, 255);
 
 			for (let box of boxes) {
 				p.push();
 				p.translate(box.position.x, box.position.y);
 				p.rotate(box.angle);
-				p.rect(
-					0,
-					0,
-					box.bounds.max.x - box.bounds.min.x,
-					box.bounds.max.y - box.bounds.min.y
-				);
+				let boxWidth = box.bounds.max.x - box.bounds.min.x;
+				let boxHeight = box.bounds.max.y - box.bounds.min.y;
+				p.fill(150, boxWidth, boxHeight);
+				p.noStroke();
+				p.rect(0, 0, boxWidth, boxHeight);
 				p.pop();
 			}
 			p.fill(150);
@@ -62,5 +68,5 @@ export const useFallingShapes = () => {
 			p.resizeCanvas(p.windowWidth - 300, p.windowHeight);
 		};
 	};
-	return { sketch };
+	return { sketch, config };
 };

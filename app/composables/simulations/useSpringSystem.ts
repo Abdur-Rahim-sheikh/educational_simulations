@@ -1,7 +1,13 @@
 import type p5 from "p5";
-import Matter from "matter-js";
+import Matter, { Vector } from "matter-js";
 
 export const useSpringSystem = () => {
+	const config = reactive({
+		stiffness: 0.05,
+		damping: 0.01,
+		length: 200,
+		mass: 5,
+	});
 	const sketch = (p: p5) => {
 		const Engine = Matter.Engine;
 		const World = Matter.World;
@@ -32,6 +38,8 @@ export const useSpringSystem = () => {
 				restitution: 0.8,
 			});
 
+			Matter.Body.setMass(weight, config.mass);
+
 			spring = Constraint.create({
 				bodyA: anchor,
 				bodyB: weight,
@@ -61,6 +69,13 @@ export const useSpringSystem = () => {
 
 		p.draw = () => {
 			p.background(30);
+			spring.stiffness = config.stiffness;
+			spring.damping = config.damping;
+			spring.length = config.length;
+			if (Math.abs(weight.mass - config.mass) > 0.1) {
+				Matter.Body.setMass(weight, config.mass);
+			}
+
 			Engine.update(engine);
 
 			// anchor
@@ -79,9 +94,24 @@ export const useSpringSystem = () => {
 			);
 
 			// weight
-			p.fill(255, 204, 0);
+			const stretch = Math.abs(
+				Vector.magnitude(Vector.sub(anchor.position, weight.position)) -
+					config.length
+			);
+			const r = p.map(stretch, 0, 200, 255, 255);
+			const g = p.map(stretch, 0, 200, 204, 0);
+			const b = p.map(stretch, 0, 200, 0, 0);
+			p.fill(r, g, b);
 			p.noStroke();
-			p.circle(weight.position.x, weight.position.y, 80);
+			// also updating the cursor to grab
+			p.cursor("default");
+			if (
+				p.mouseIsPressed &&
+				p.dist(weight.position.x, weight.position.y, p.mouseX, p.mouseY) < 50
+			) {
+				p.cursor("grab");
+			}
+			p.circle(weight.position.x, weight.position.y, 40 + config.mass);
 
 			// Instruction
 			p.fill(150);
@@ -95,5 +125,5 @@ export const useSpringSystem = () => {
 			p.resizeCanvas(p.windowWidth - 300, p.windowHeight);
 		};
 	};
-	return { sketch };
+	return { sketch, config };
 };
