@@ -4,15 +4,17 @@
 >
 import { useFallingShapes } from '~/composables/useFallingShapes';
 import { useSpringSystem } from '~/composables/useSpringSystem';
+import { useFallingCar } from '~/composables/useFallingCar';
 import SketchCanvas from '~/components/SketchCanvas.vue';
 import SimulationControls from '~/components/SimulationControls.vue';
 
 const isSidebarOpen = ref(true);
-const currentKey = ref('spring');
+const currentKey = ref('inclined'); // Default to the new simulation
 
 const simulations = {
+    inclined: useFallingCar(),
+    spring: useSpringSystem(),
     falling: useFallingShapes(),
-    spring: useSpringSystem()
 };
 
 // We simply retrieve whatever the simulation gives us
@@ -38,14 +40,15 @@ const selectSimulation = (key: string) => currentKey.value = key;
             <nav v-if="isSidebarOpen" class="nav-menu">
                 <button v-for="(sim, key) in simulations" :key="key" @click="selectSimulation(key)"
                     :class="{ active: currentKey === key }">
-                    {{ key === 'falling' ? '📦 Falling Bodies' : '🌀 Spring System' }}
+                    <!-- Simple mapping for labels -->
+                    {{
+                        key === 'falling' ? '📦 Falling Bodies' :
+                            key === 'spring' ? '🌀 Spring System' :
+                                key === 'inclined' ? '📐 Animation vs Math' : key
+                    }}
                 </button>
             </nav>
 
-            <!-- 
-        GENERIC WIDGET AREA 
-        This will render ANY controls passed by the current simulation
-      -->
             <SimulationControls v-if="isSidebarOpen && currentSimulation.controls" :config="currentSimulation.config"
                 :controls="currentSimulation.controls" />
         </aside>
@@ -114,6 +117,7 @@ const selectSimulation = (key: string) => currentKey.value = key;
     flex-direction: column;
     gap: 10px;
     flex: 1;
+    overflow-y: auto;
 }
 
 .nav-menu button {
@@ -126,7 +130,6 @@ const selectSimulation = (key: string) => currentKey.value = key;
     border-radius: 6px;
     transition: all 0.2s;
     font-size: 1rem;
-    text-transform: capitalize;
 }
 
 .nav-menu button:hover {
