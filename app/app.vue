@@ -2,26 +2,23 @@
     setup
     lang="ts"
 >
-import { useFallingShapes } from '~/composables/simulations/useFallingShapes';
-import { useSpringSystem } from '~/composables/simulations/useSpringSystem';
-import BaseCanvas from '~/components/sketch/BaseCanvas.vue';
+import { useFallingShapes } from '~/composables/useFallingShapes';
+import { useSpringSystem } from '~/composables/useSpringSystem';
+import SketchCanvas from '~/components/SketchCanvas.vue';
+import SimulationControls from '~/components/SimulationControls.vue';
 
 const isSidebarOpen = ref(true);
 const currentKey = ref('spring');
 
-// Initialize simulations once
 const simulations = {
     falling: useFallingShapes(),
     spring: useSpringSystem()
 };
 
-// Computed property to get current simulation data
+// We simply retrieve whatever the simulation gives us
 const currentSimulation = computed(() => {
     return simulations[currentKey.value as keyof typeof simulations];
 });
-
-// Helper to access config easily in template
-const activeConfig = computed(() => currentSimulation.value.config);
 
 const toggleSidebar = () => isSidebarOpen.value = !isSidebarOpen.value;
 const selectSimulation = (key: string) => currentKey.value = key;
@@ -38,61 +35,24 @@ const selectSimulation = (key: string) => currentKey.value = key;
                 </button>
             </div>
 
-            <!-- Navigation -->
             <nav v-if="isSidebarOpen" class="nav-menu">
-                <button @click="selectSimulation('falling')" :class="{ active: currentKey === 'falling' }">
-                    📦 Falling Bodies
-                </button>
-                <button @click="selectSimulation('spring')" :class="{ active: currentKey === 'spring' }">
-                    🌀 Spring System
+                <button v-for="(sim, key) in simulations" :key="key" @click="selectSimulation(key)"
+                    :class="{ active: currentKey === key }">
+                    {{ key === 'falling' ? '📦 Falling Bodies' : '🌀 Spring System' }}
                 </button>
             </nav>
 
-            <!-- WIDGETS: Dynamic Controls based on selected simulation -->
-            <div v-if="isSidebarOpen" class="controls-panel">
-                <div class="controls-header">Parameters</div>
-
-                <!-- Controls for Spring Simulation -->
-                <div v-if="currentKey === 'spring'" class="control-group">
-                    <label>
-                        <span>দৃড়তা: {{ activeConfig.stiffness }}</span>
-                        <input type="range" min="0.001" max="0.2" step="0.001" v-model.number="activeConfig.stiffness">
-                    </label>
-
-                    <label>
-                        <span>শক্তি হ্রাস: {{ activeConfig.damping }}</span>
-                        <input type="range" min="0" max="0.5" step="0.01" v-model.number="activeConfig.damping">
-                    </label>
-
-                    <label>
-                        <span>দৈর্ঘ: {{ activeConfig.length }}</span>
-                        <input type="range" min="50" max="400" step="10" v-model.number="activeConfig.length">
-                    </label>
-
-                    <label>
-                        <span>ভর: {{ activeConfig.mass }}</span>
-                        <input type="range" min="1" max="50" step="1" v-model.number="activeConfig.mass">
-                    </label>
-                </div>
-
-                <!-- Controls for Falling Shapes -->
-                <div v-if="currentKey === 'falling'" class="control-group">
-                    <label>
-                        <span>অভিকর্ষ বল: {{ activeConfig.gravityScale }}</span>
-                        <input type="range" min="0" max="5" step="0.1" v-model.number="activeConfig.gravityScale">
-                    </label>
-                    <label>
-                        <span>সময়ের গতি: {{ activeConfig.timeScale }}</span>
-                        <input type="range" min="0.1" max="3" step="0.1" v-model.number="activeConfig.timeScale">
-                    </label>
-                </div>
-
-            </div>
+            <!-- 
+        GENERIC WIDGET AREA 
+        This will render ANY controls passed by the current simulation
+      -->
+            <SimulationControls v-if="isSidebarOpen && currentSimulation.controls" :config="currentSimulation.config"
+                :controls="currentSimulation.controls" />
         </aside>
 
         <main class="content">
             <ClientOnly>
-                <BaseCanvas :sketch="currentSimulation.sketch" />
+                <SketchCanvas :sketch="currentSimulation.sketch" />
                 <template #fallback>
                     <div class="loading">Loading...</div>
                 </template>
@@ -103,7 +63,7 @@ const selectSimulation = (key: string) => currentKey.value = key;
 </template>
 
 <style scoped>
-/* Previous Sidebar styles preserved */
+/* Layout basics */
 .app-layout {
     display: flex;
     height: 100vh;
@@ -117,13 +77,13 @@ const selectSimulation = (key: string) => currentKey.value = key;
     transition: width 0.3s ease;
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
 }
 
 .sidebar.collapsed {
     width: 60px;
 }
 
+/* Header & Toggle */
 .sidebar-header {
     padding: 20px;
     display: flex;
@@ -147,12 +107,13 @@ const selectSimulation = (key: string) => currentKey.value = key;
     border-radius: 4px;
 }
 
+/* Navigation */
 .nav-menu {
     padding: 20px;
     display: flex;
     flex-direction: column;
     gap: 10px;
-    border-bottom: 1px solid #333;
+    flex: 1;
 }
 
 .nav-menu button {
@@ -165,6 +126,7 @@ const selectSimulation = (key: string) => currentKey.value = key;
     border-radius: 6px;
     transition: all 0.2s;
     font-size: 1rem;
+    text-transform: capitalize;
 }
 
 .nav-menu button:hover {
@@ -189,45 +151,5 @@ const selectSimulation = (key: string) => currentKey.value = key;
     align-items: center;
     height: 100%;
     color: #666;
-}
-
-/* New Control Styles */
-.controls-panel {
-    padding: 20px;
-    color: #ddd;
-}
-
-.controls-header {
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: #666;
-    margin-bottom: 15px;
-    font-weight: bold;
-}
-
-.control-group {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-.control-group label {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    font-size: 0.9rem;
-}
-
-.control-group label span {
-    display: flex;
-    justify-content: space-between;
-    font-family: monospace;
-}
-
-.control-group input[type="range"] {
-    width: 100%;
-    cursor: pointer;
-    accent-color: #42b883;
 }
 </style>

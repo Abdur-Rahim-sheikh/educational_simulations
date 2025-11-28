@@ -6,16 +6,6 @@
 
 These teach you p5.js basics: drawing, updating positions, time, vectors.
 
-1. Constant Velocity Motion
-
-Definition: A ball moving in a straight line with constant speed.
-Skills: p5 draw loop, updating position, simple vector math.
-
-2. Constant Acceleration (Free Fall Without Air)
-
-Definition: A ball starts at rest and accelerates downward under gravity.
-Skills: manual physics equations, velocity update, acceleration update.
-
 3. Vertical Throw (Projectile Motion Without Collisions)
 
 Definition: Launch a ball upward, let it fall back due to gravity.
