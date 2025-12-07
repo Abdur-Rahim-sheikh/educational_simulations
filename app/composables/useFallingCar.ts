@@ -2,10 +2,9 @@ import type p5 from "p5";
 import Matter from "matter-js";
 
 export const useFallingCar = () => {
-	// 1. Reactive Configuration
 	const config = reactive({
-		angle: 30, // Angle of the ramp
-		length: 500, // Length of the ramp (pixels)
+		angle: 30,
+		length: 500,
 		friction: 0.001, // Surface friction (ice vs concrete)
 	});
 
@@ -46,14 +45,13 @@ export const useFallingCar = () => {
 
 		let engine: Matter.Engine;
 		let ramp: Matter.Body;
-		let ground: Matter.Body; // Keep ground for base
+		let ground: Matter.Body;
 		let wall: Matter.Body;
 		let car: Matter.Body;
 		let startPos: Matter.Vector;
 		let X_Base: number;
 		let Y_Base: number;
 
-		// For calculating distance traveled
 		let initialPos: Matter.Vector;
 
 		p.setup = () => {
@@ -61,8 +59,8 @@ export const useFallingCar = () => {
 			engine = Engine.create();
 			engine.gravity.y = 1;
 
-			X_Base = 150; // Fixed horizontal position for the bottom pivot
-			Y_Base = p.height - 40; // Just above the ground bar (40px up from bottom edge)
+			X_Base = 150;
+			Y_Base = p.height - 40;
 
 			createScene();
 		};
@@ -71,20 +69,9 @@ export const useFallingCar = () => {
 			World.clear(engine.world, false);
 			Engine.clear(engine);
 
-			const angleRad = p.radians(config.angle);
-
-			// --- 1. Calculate Ramp Center (Pivoting from Bottom Left) ---
-
-			// The ramp's center is calculated backward from the fixed base point (X_Base, Y_Base).
-			// It is half the length away, along the negative angle direction.
-			const halfLength = config.length / 2;
-
-			const rampX = X_Base + halfLength * p.cos(angleRad);
-			const rampY = Y_Base - halfLength * p.sin(angleRad);
 			// Create Wall
 			wall = Bodies.rectangle(X_Base, p.height / 2, 20, p.height, {
 				isStatic: true,
-				angle: -angleRad,
 			});
 
 			// Create Ground
@@ -94,40 +81,52 @@ export const useFallingCar = () => {
 				friction: 1.0,
 			});
 
+			// --- 1. Calculate Ramp Center (Pivoting from Bottom Left) ---
+			const angleRad = p.radians(config.angle);
+			const halfLength = config.length / 2;
+
+			const rampX = X_Base + halfLength * p.cos(angleRad);
+			const rampY = Y_Base - halfLength * p.sin(angleRad);
+
 			// Create Ramp
 			ramp = Bodies.rectangle(rampX, rampY, config.length, 20, {
 				isStatic: true,
-				angle: -angleRad, // Matter.js angles are counter-clockwise from the X-axis, so we use negative angle for downward slope
+				angle: angleRad,
 				friction: config.friction,
 			});
 
 			// --- 2. Calculate Car Start Position (At the Top Corner) ---
 
 			// X_Top and Y_Top are the coordinates of the ramp's top corner
-			const X_Top = X_Base + config.length * p.cos(angleRad);
-			const Y_Top = Y_Base - config.length * p.sin(angleRad);
+			const verts = ramp.vertices;
+			const projected = verts.map((v) => ({
+				v,
+				dot: v.x * p.cos(angleRad) + v.y * p.sin(angleRad),
+			}));
+			projected.sort((a, b) => a.dot - b.dot);
+			const top = projected[projected.length - 1]?.v || { x: 0, y: 0 };
 
-			// Start position is slightly down from the top corner, adjusted by the ramp angle
-			const distanceDownRamp = 40;
-			const perpendicularLift = 10; // Half car height (20 / 2)
+			// Start position is slightly up from the top corner, adjusted by the ramp angle
+			const distanceDownRamp = 20;
+			const perpendicularLift = 10;
 
 			// 1. Position along the ramp line
 			startPos = {
-				x: X_Top - distanceDownRamp * p.cos(angleRad),
-				y: Y_Top + distanceDownRamp * p.sin(angleRad),
+				x: top.x - distanceDownRamp * p.cos(angleRad),
+				y: top.y + distanceDownRamp * p.sin(angleRad),
 			};
 
 			// 2. Adjust position perpendicular to the ramp line to center the car's mass
 			startPos = {
 				x: startPos.x + perpendicularLift * p.sin(angleRad),
-				y: startPos.y + perpendicularLift * p.cos(angleRad),
+				y: startPos.y - perpendicularLift * p.cos(angleRad),
 			};
 
 			car = Bodies.rectangle(startPos.x, startPos.y, 40, 20, {
 				friction: config.friction,
 				frictionAir: 0.005,
 				restitution: 0,
-				angle: -angleRad, // Match ramp angle
+				angle: angleRad, // Match ramp angle
 				density: 0.005,
 			});
 			initialPos = { ...car.position };
