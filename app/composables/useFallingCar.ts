@@ -53,6 +53,8 @@ export const useFallingCar = () => {
 		let Y_Base: number;
 
 		let initialPos: Matter.Vector;
+		let ramp_ground_x_mark: number;
+		let snap_volecity: number;
 
 		p.setup = () => {
 			const canvas = p.createCanvas(p.windowWidth - 300, p.windowHeight);
@@ -68,6 +70,9 @@ export const useFallingCar = () => {
 		const createScene = () => {
 			World.clear(engine.world, false);
 			Engine.clear(engine);
+
+			// marking the snap volecity to zero
+			snap_volecity = 0;
 
 			// Create Wall
 			wall = Bodies.rectangle(X_Base, p.height / 2, 20, p.height, {
@@ -99,21 +104,21 @@ export const useFallingCar = () => {
 
 			// X_Top and Y_Top are the coordinates of the ramp's top corner
 			const verts = ramp.vertices;
-			const projected = verts.map((v) => ({
+			let ramp_final_pos = verts.map((v) => ({
 				v,
 				dot: v.x * p.cos(angleRad) + v.y * p.sin(angleRad),
 			}));
-			projected.sort((a, b) => a.dot - b.dot);
-			const top = projected[projected.length - 1]?.v || { x: 0, y: 0 };
-
+			ramp_final_pos.sort((a, b) => a.dot - b.dot);
+			const top = ramp_final_pos[0]?.v || { x: 0, y: 0 };
+			ramp_ground_x_mark = ramp_final_pos[1]?.v.x || 0;
 			// Start position is slightly up from the top corner, adjusted by the ramp angle
 			const distanceDownRamp = 20;
 			const perpendicularLift = 10;
 
 			// 1. Position along the ramp line
 			startPos = {
-				x: top.x - distanceDownRamp * p.cos(angleRad),
-				y: top.y + distanceDownRamp * p.sin(angleRad),
+				x: top.x + distanceDownRamp * p.cos(angleRad),
+				y: top.y - distanceDownRamp * p.sin(angleRad),
 			};
 
 			// 2. Adjust position perpendicular to the ramp line to center the car's mass
@@ -176,144 +181,66 @@ export const useFallingCar = () => {
 			p.ellipse(15, 10, 10, 10);
 			p.pop();
 
-			// --- 2. The "Math Layer" (Alan Becker Style) ---
-
 			// The 'distance' must be measured along the ramp
 			const displacementVector = Vector.sub(car.position, initialPos);
-			// Projection of displacement onto the ramp axis (angle of ramp)
+
 			const angleRad = p.radians(config.angle);
-			// Unit vector pointing down the ramp (cos(theta), sin(theta))
+
 			const rampUnitVector = Vector.create(p.cos(angleRad), p.sin(angleRad));
 			const distance = Vector.dot(displacementVector, rampUnitVector);
 
 			const velocity = car.speed;
-			// Acceleration down the ramp: g * sin(theta)
-			const accel = engine.world.gravity.y * p.sin(p.radians(config.angle));
+
+			const accel = engine.gravity.y * p.sin(p.radians(config.angle));
 
 			drawMathOverlay(p, distance, velocity, accel);
 
 			// Reset logic
 			if (car.position.y > p.height || car.position.x > p.width) {
-				createScene(); // Use createScene to ensure perfect reset when parameters may have changed
+				createScene();
 			}
 		};
 
 		const resetCar = () => {
-			// Re-creating the entire scene is the safest way to ensure the car starts exactly
-			// on the recalculated ramp position, especially since ramp angle changes trigger this.
 			createScene();
 		};
 
-		// Helper for dashed lines (Local function instead of attaching to p)
-		const setLineDash = (list: number[]) => {
-			// Cast drawingContext to CanvasRenderingContext2D to access setLineDash
-			(p.drawingContext as CanvasRenderingContext2D).setLineDash(list);
-		};
-
 		const drawMathOverlay = (p: p5, s: number, v: number, a: number) => {
-			p.textAlign(p.RIGHT); // Align text to the right for the top-right corner
+			p.textAlign(p.RIGHT);
 			p.textFont("monospace");
 
 			// --- MATH POSITION CHANGE: Upper Right Corner ---
-			const rightMargin = 50;
+			const rightMargin = 250;
 			const topMargin = 50;
 			const baseX = p.width - rightMargin;
 			const baseY = topMargin;
 
 			// Draw The Formula
+			p.textAlign(p.LEFT);
 			p.textSize(24);
 			p.fill(150);
-			p.text("Kinematic Equation:", baseX, baseY);
+			p.text("V² = U² + 2AS", baseX, baseY);
 
-			p.textSize(32);
+			p.textSize(28);
 			p.fill(255);
 
-			let xCursor = baseX;
-
-			// Start drawing from the right and move left
-
-			// "v²"
+			// "u²"
 			p.fill("#FF4C4C");
-			p.text("v²", xCursor, baseY + 40);
+			let prev_volecity = (v * v).toFixed(2);
+			p.text(`u²  = ${prev_volecity}`, baseX, baseY + 40);
 
-			// Backtrack cursor position to draw next element to its left
-			xCursor -= p.textWidth("v² ");
+			// 2as
+			let dist = (2 * a * s).toFixed(2);
+			p.text(`2as = ${dist}`, baseX, baseY + 70);
 
-			p.fill(255);
-			p.text(" = ", xCursor, baseY + 40);
-			xCursor -= p.textWidth(" = ");
+			// marking when car touches the ground
 
-			// "u²" (0)
-			p.fill(100);
-			p.text("0", xCursor, baseY + 40);
-			xCursor -= p.textWidth("0 ");
-
-			p.fill(255);
-			p.text(" + 2(", xCursor, baseY + 40);
-			xCursor -= p.textWidth(" + 2(");
-
-			// "a"
-			p.fill("#42b883");
-			p.text(a.toFixed(2), xCursor, baseY + 40);
-			xCursor -= p.textWidth(a.toFixed(2));
-
-			p.fill(255);
-			p.text(")(", xCursor, baseY + 40);
-			xCursor -= p.textWidth(")(");
-
-			// "s"
-			p.fill("#4C9AFF");
-			p.text(s.toFixed(1), xCursor, baseY + 40);
-
-			// This is the position of 's' (approximately)
-			const sTextAnchorX = xCursor - p.textWidth(s.toFixed(1)) / 2;
-
-			xCursor -= p.textWidth(s.toFixed(1));
-
-			p.fill(255);
-			p.text(")", xCursor, baseY + 40);
-
-			// --- Visual Connectors ---
-
-			// Draw Line from "s" in equation to the initial position of car
-			if (s > 10) {
-				p.push();
-				p.stroke("#4C9AFF");
-				p.strokeWeight(1);
-
-				setLineDash([5, 5]);
-
-				// Draw line from the math box to the starting position
-				p.line(sTextAnchorX, baseY + 20, initialPos.x, initialPos.y);
-				p.pop();
-
-				// Draw distance path on ramp
-				p.push();
-				p.stroke("#4C9AFF");
-				p.strokeWeight(3);
-				// Clear line dash for the solid distance line
-				setLineDash([0, 0]);
-				p.line(initialPos.x, initialPos.y, car.position.x, car.position.y);
-				p.pop();
+			if (car.position.x < ramp_ground_x_mark) {
 			}
-
-			// Re-align to Left for result text
-			p.textAlign(p.LEFT);
-
-			// Live Result (position relative to the top right corner)
-			const vSquared = (v * v).toFixed(2);
-			const rhs = (2 * a * s).toFixed(2);
-
-			p.textSize(20);
-			p.fill(150);
-			// We use baseX - 300 to push the text back from the right edge
-			p.text(`Left Side (v²): ${vSquared}`, baseX - 300, baseY + 80);
-			p.text(`Right Side (2as): ${rhs}`, baseX - 300, baseY + 110);
-
 			// Instructions
-			p.fill(80);
+			p.fill(0, 255, 0);
 			p.textSize(12);
-			p.text("Click canvas to reset car", p.width - 200, p.height - 20);
+			p.text("Click canvas to reset car", p.width - 200, p.height - 50);
 		};
 
 		p.mousePressed = () => {
@@ -330,11 +257,10 @@ export const useFallingCar = () => {
 
 		p.windowResized = () => {
 			p.resizeCanvas(p.windowWidth - 300, p.windowHeight);
-			Y_Base = p.height - 40; // Recalculate Y_Base based on new height
+			Y_Base = p.height - 40;
 			createScene();
 		};
 
-		// Watch for config changes
 		let lastAngle = config.angle;
 		let lastLength = config.length;
 
