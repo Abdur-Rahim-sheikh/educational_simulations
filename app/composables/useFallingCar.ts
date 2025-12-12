@@ -117,10 +117,12 @@ export const useFallingCar = () => {
 			}));
 			ramp_final_pos.sort((a, b) => a.dot - b.dot);
 			const top = ramp_final_pos[0]?.v || { x: 0, y: 0 };
+
 			// test purpose start
 			const bottom = { x: X_Base + config.length * p.cos(angleRad), y: Y_Base };
 			const dist = Matter.Vector.magnitude(Matter.Vector.sub(top, bottom));
 			console.log(`dist logged ${dist}`);
+
 			// test purpose end
 			ramp_ground_x_mark = X_Base + config.length * p.cos(angleRad);
 
@@ -205,7 +207,7 @@ export const useFallingCar = () => {
 			const velocity = car.speed;
 
 			// for real world
-			const accel = engine.gravity.y * p.sin(p.radians(config.angle)) * 9.8;
+			const accel = engine.gravity.y * p.sin(angleRad) * 9.8;
 
 			drawMathOverlay(p, distance, velocity, accel);
 
@@ -229,20 +231,28 @@ export const useFallingCar = () => {
 			p.textFont("monospace");
 
 			// --- MATH POSITION CHANGE: Upper Right Corner ---
-			const rightMargin = 250;
+			const rightMargin = 280;
 			const topMargin = 50;
 			const baseX = p.width - rightMargin;
-			const baseY = topMargin;
+			let baseY = topMargin;
 
 			// Draw The Formula
 			p.textAlign(p.LEFT);
 			p.textSize(24);
 			p.fill(150);
 			p.text("V² = U² + 2AS", baseX, baseY);
-
-			p.textSize(28);
-			p.fill(255);
-
+			baseY += 40;
+			p.textSize(20);
+			// aliavated gravity
+			p.push();
+			p.fill(230);
+			let adjusted_gravity = 9.8 * p.sin(p.radians(config.angle));
+			p.text(
+				`a = 9.8*sin(${config.angle}) = ${adjusted_gravity.toFixed(2)}`,
+				baseX,
+				baseY
+			);
+			p.pop();
 			// "u²"
 			p.fill("#FF4C4C");
 			let prev_volecity = v * v;
@@ -253,9 +263,9 @@ export const useFallingCar = () => {
 			p.text(`2as = ${dist}`, baseX, baseY + 70);
 
 			// marking when car touches the ground
-			if (car.position.x < ramp_ground_x_mark) {
+			if (s <= config.length) {
 				snap_volecity = Math.sqrt(prev_volecity + 2 * a * s);
-				console.log(prev_volecity, a, s);
+				console.log(prev_volecity.toFixed(2), a.toFixed(2), s.toFixed(2));
 			} else {
 				p.text(`V = ${snap_volecity.toFixed(2)}`, X_Base + 20, Y_Base - 10);
 			}
