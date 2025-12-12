@@ -45,6 +45,7 @@ export const useFallingCar = () => {
 
 		let engine: Matter.Engine;
 		let ramp: Matter.Body;
+		let ground_post: Matter.Body;
 		let ground: Matter.Body;
 		let wall: Matter.Body;
 		let car: Matter.Body;
@@ -86,6 +87,12 @@ export const useFallingCar = () => {
 				friction: 1.0,
 			});
 
+			// End of ground
+			ground_post = Bodies.circle(p.width - 10, p.height - 50, 10, {
+				isStatic: true,
+				friction: 1.0,
+			});
+
 			// --- 1. Calculate Ramp Center (Pivoting from Bottom Left) ---
 			const angleRad = p.radians(config.angle);
 			const halfLength = config.length / 2;
@@ -110,7 +117,13 @@ export const useFallingCar = () => {
 			}));
 			ramp_final_pos.sort((a, b) => a.dot - b.dot);
 			const top = ramp_final_pos[0]?.v || { x: 0, y: 0 };
-			ramp_ground_x_mark = ramp_final_pos[1]?.v.x || 0;
+			// test purpose start
+			const bottom = { x: X_Base + config.length * p.cos(angleRad), y: Y_Base };
+			const dist = Matter.Vector.magnitude(Matter.Vector.sub(top, bottom));
+			console.log(`dist logged ${dist}`);
+			// test purpose end
+			ramp_ground_x_mark = X_Base + config.length * p.cos(angleRad);
+
 			// Start position is slightly up from the top corner, adjusted by the ramp angle
 			const distanceDownRamp = 20;
 			const perpendicularLift = 10;
@@ -131,16 +144,16 @@ export const useFallingCar = () => {
 				friction: config.friction,
 				frictionAir: 0.005,
 				restitution: 0,
-				angle: angleRad, // Match ramp angle
+				angle: angleRad,
 				density: 0.005,
 			});
-			initialPos = { ...car.position };
+			initialPos = { ...top };
 
-			World.add(engine.world, [ground, ramp, car]);
+			World.add(engine.world, [ground, ground_post, ramp, car]);
 		};
 
 		p.draw = () => {
-			p.background(20); // Dark "Blackboard" background
+			p.background(20);
 
 			Engine.update(engine);
 
@@ -175,6 +188,7 @@ export const useFallingCar = () => {
 			p.fill("#FF4C4C"); // Alan Becker Red
 			p.noStroke();
 			p.rect(0, 0, 40, 20);
+
 			// Wheels
 			p.fill(255);
 			p.ellipse(-15, 10, 10, 10);
@@ -186,19 +200,24 @@ export const useFallingCar = () => {
 
 			const angleRad = p.radians(config.angle);
 
-			const rampUnitVector = Vector.create(p.cos(angleRad), p.sin(angleRad));
-			const distance = Vector.dot(displacementVector, rampUnitVector);
+			const distance = Matter.Vector.magnitude(displacementVector);
 
 			const velocity = car.speed;
 
-			const accel = engine.gravity.y * p.sin(p.radians(config.angle));
+			// for real world
+			const accel = engine.gravity.y * p.sin(p.radians(config.angle)) * 9.8;
 
 			drawMathOverlay(p, distance, velocity, accel);
 
-			// Reset logic
-			if (car.position.y > p.height || car.position.x > p.width) {
-				createScene();
-			}
+			// End of land
+			p.push();
+			p.fill(112);
+			p.circle(
+				ground_post.position.x,
+				ground_post.position.y,
+				ground_post.circleRadius || 0
+			);
+			p.pop();
 		};
 
 		const resetCar = () => {
@@ -226,17 +245,21 @@ export const useFallingCar = () => {
 
 			// "u²"
 			p.fill("#FF4C4C");
-			let prev_volecity = (v * v).toFixed(2);
-			p.text(`u²  = ${prev_volecity}`, baseX, baseY + 40);
+			let prev_volecity = v * v;
+			p.text(`u²  = ${prev_volecity.toFixed(2)}`, baseX, baseY + 40);
 
 			// 2as
 			let dist = (2 * a * s).toFixed(2);
 			p.text(`2as = ${dist}`, baseX, baseY + 70);
 
 			// marking when car touches the ground
-
 			if (car.position.x < ramp_ground_x_mark) {
+				snap_volecity = Math.sqrt(prev_volecity + 2 * a * s);
+				console.log(prev_volecity, a, s);
+			} else {
+				p.text(`V = ${snap_volecity.toFixed(2)}`, X_Base + 20, Y_Base - 10);
 			}
+
 			// Instructions
 			p.fill(0, 255, 0);
 			p.textSize(12);
